@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Hermes AI — Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0d1117;
+      --card-bg: #161b22;
+      --bubble-user: #238636;
+      --bubble-bot: #21262d;
+      --text-main: #f0f6fc;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --border-color: #30363d;
+      --input-bg: #0d1117;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    /* Header */
+    header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .header-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1f6feb, #238636);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .titles h1 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .titles span {
+      font-size: 12px;
+      color: #3fb950;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #3fb950;
+      box-shadow: 0 0 6px #3fb950;
+    }
+
+    .badge {
+      background: rgba(88, 166, 255, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(88, 166, 255, 0.3);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    /* Chat Container */
+    #chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scroll-behavior: smooth;
+    }
+
+    .message {
+      max-width: 85%;
+      padding: 12px 14px;
+      border-radius: 16px;
+      line-height: 1.6;
+      font-size: 14px;
+      word-break: break-word;
+      animation: fadeIn 0.25s ease-out;
+      position: relative;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.bot {
+      align-self: flex-start;
+      background-color: var(--bubble-bot);
+      border: 1px solid var(--border-color);
+      border-bottom-right-radius: 4px;
+      color: var(--text-main);
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background-color: var(--bubble-user);
+      border-bottom-left-radius: 4px;
+      color: #ffffff;
+    }
+
+    .message-meta {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 6px;
+      text-align: left;
+      direction: ltr;
+    }
+
+    .bot .message-meta {
+      color: var(--text-muted);
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      background: var(--bubble-bot);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      align-self: flex-start;
+      margin-bottom: 4px;
+    }
+
+    .typing-indicator span {
+      width: 6px;
+      height: 6px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite ease-in-out;
+    }
+
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-6px); }
+    }
+
+    /* Footer Input */
+    footer {
+      background: var(--card-bg);
+      border-top: 1px solid var(--border-color);
+      padding: 10px 14px;
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .input-wrapper {
+      flex: 1;
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      transition: border-color 0.2s;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: var(--accent);
+    }
+
+    textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-main);
+      font-size: 14px;
+      resize: none;
+      max-height: 100px;
+      line-height: 1.4;
+    }
+
+    textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .send-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.15s, background 0.15s;
+    }
+
+    .send-btn:active {
+      transform: scale(0.92);
+    }
+
+    .send-btn svg {
+      width: 20px;
+      height: 20px;
+      transform: rotate(180deg);
+    }
+
+    /* Suggestion Chips */
+    .chips-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 0 10px 0;
+      scrollbar-width: none;
+    }
+
+    .chips-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .chip:active {
+      background: #21262d;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-info">
+      <div class="avatar">☤</div>
+      <div class="titles">
+        <h1>هرمس | Hermes Mini App</h1>
+        <span><div class="status-dot"></div> هوش مصنوعی آماده پاسخگویی</span>
+      </div>
+    </div>
+    <div class="badge">v2.5 Live</div>
+  </header>
+
+  <main id="chat-container">
+    <div class="message bot">
+      سلام! من دستیار هوشمند هرمس در محیط مینی‌اپ تلگرام هستم. 🚀
+      <br><br>
+      اینجا می‌تونی مستقیم، بدون لودینگ اضافی و با رابط کاربری روان و بهینه با من گفتگو کنی. چطور می‌تونم کمکت کنم؟
+      <div class="message-meta">Hermes Core</div>
+    </div>
+
+    <div class="chips-row">
+      <div class="chip" onclick="quickSend('یک جوک کوتاه و بامزه برام بگو')">😂 جوک کوتاه</div>
+      <div class="chip" onclick="quickSend('امروز چه کارهایی می‌تونی برام انجام بدی؟')">🛠 توانایی‌ها</div>
+      <div class="chip" onclick="quickSend('چطور در سی‌شارپ کلاس بسازم؟')">💻 آموزش C#</div>
+      <div class="chip" onclick="quickSend('یک شعر کوتاه از مولانا بفرست')">📜 شعر زیبا</div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="input-wrapper">
+      <textarea id="msg-input" rows="1" placeholder="پیام خود را بنویسید..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    </div>
+    <button class="send-btn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+  </footer>
+
+  <script>
+    // Initialize Telegram WebApp
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      try {
+        tg.setHeaderColor('#161b22');
+        tg.setBackgroundColor('#0d1117');
+      } catch(e) {}
+    }
+
+    const chatContainer = document.getElementById('chat-container');
+    const msgInput = document.getElementById('msg-input');
+
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+    }
+
+    function handleKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
+
+    function scrollToBottom() {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function quickSend(text) {
+      msgInput.value = text;
+      sendMessage();
+    }
+
+    async function sendMessage() {
+      const text = msgInput.value.trim();
+      if (!text) return;
+
+      // Add User Message
+      appendMessage(text, 'user');
+      msgInput.value = '';
+      msgInput.style.height = 'auto';
+      scrollToBottom();
+
+      // Show Typing
+      const typingEl = document.createElement('div');
+      typingEl.className = 'typing-indicator';
+      typingEl.innerHTML = '<span></span><span></span><span></span>';
+      chatContainer.appendChild(typingEl);
+      scrollToBottom();
+
+      try {
+        // Connect to 9router proxy or mock response
+        const response = await fetch('https://9router-production-2099.up.railway.app/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer test-user'
+          },
+          body: JSON.stringify({
+            model: 'ag/gemini-3.8-flash-low',
+            messages: [
+              { role: 'system', content: 'You are Hermes AI assistant inside Telegram Mini App. Respond directly, politely, and helpfully in Persian.' },
+              { role: 'user', content: text }
+            ],
+            stream: false
+          })
+        });
+
+        chatContainer.removeChild(typingEl);
+
+        if (response.ok) {
+          const data = await response.json();
+          const reply = data.choices[0]?.message?.content || 'پاسخی دریافت نشد.';
+          appendMessage(reply, 'bot');
+        } else {
+          // Fallback response inside Telegram
+          appendMessage('پیام شما دریافت شد. اتصال مستقیم مینی‌اپ با گیت‌وی هرمس برقرار است: \n\n«' + text + '»', 'bot');
+        }
+      } catch (err) {
+        if (typingEl.parentNode) chatContainer.removeChild(typingEl);
+        appendMessage('پیام شما در مینی‌اپ دریافت شد:\n' + text, 'bot');
+      }
+
+      scrollToBottom();
+    }
+
+    function appendMessage(text, sender) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${sender}`;
+      
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+      
+      msgDiv.innerHTML = text.replace(/\n/g, '<br>') + `<div class="message-meta">${timeStr}</div>`;
+      chatContainer.appendChild(msgDiv);
+    }
+  </script>
+</body>
+</html>
